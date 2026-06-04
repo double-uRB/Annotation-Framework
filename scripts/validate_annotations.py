@@ -1,82 +1,74 @@
-import json
-import jsonschema
-import sys
-import os
+"""Validate JSONL annotations against the project JSON Schema."""
 
-def validate_annotations():
-    schema_path = r"d:\Project\ZeTheta Annotation Framework\schema\annotation_schema.json"
-    annotations_path = r"d:\Project\ZeTheta Annotation Framework\data\gold_standard\annotations.jsonl"
-    
-    if not os.path.exists(schema_path):
-        print(f"Error: Schema not found at {schema_path}")
-        sys.exit(1)
-        
-    with open(schema_path, "r", encoding="utf-8") as f:
-        schema = json.load(f)
-        
-    if not os.path.exists(annotations_path):
-        # Create a dummy annotations.jsonl for validation since Codex is still generating PDFs
-        with open(annotations_path, "w", encoding="utf-8") as f:
-            dummy_doc = {
-                "document_metadata": {
-                    "document_id": "bank_statement_001",
-                    "source_file_path": "data/raw_documents/bank_statements/bank_statement_001.pdf",
-                    "creation_date": "2026-06-04T12:00:00Z",
-                    "last_modified": "2026-06-04T12:00:00Z",
-                    "assigned_annotator": "Agent-Alpha",
-                    "review_status": "approved"
-                },
-                "classification": {
-                    "primary_type": "Bank Statements",
-                    "subtype": "Savings Account Statement",
-                    "quality_tags": ["CLEAN_DIGITAL"],
-                    "confidence_scores": {
-                        "primary_type_confidence": 0.99,
-                        "subtype_confidence": 0.98
-                    }
-                },
-                "entities": [
-                    {
-                        "entity_id": "ent_001",
-                        "entity_type": "MONETARY_AMOUNT",
-                        "value": "15,000.00",
-                        "normalized_value": {
-                            "amount": 15000.00,
-                            "currency": "USD"
-                        },
-                        "source_text": "15,000.00",
-                        "page_number": 1,
-                        "bounding_box": [100.0, 150.0, 50.0, 15.0],
-                        "confidence": 0.95
-                    }
-                ],
-                "relationships": [],
-                "quality_metadata": {
-                    "ocr_confidence_per_page": [{"page": 1, "confidence": 0.99}],
-                    "annotation_difficulty": 1,
-                    "time_to_annotate_seconds": 120,
-                    "review_comments": "Clean extraction."
-                },
-                "version_control": {
-                    "schema_version": "1.0.0",
-                    "annotation_guideline_version": "1.0",
-                    "annotator_tool_version": "1.10.0"
-                }
-            }
-            f.write(json.dumps(dummy_doc) + "\n")
-            
-    print(f"Validating annotations from {annotations_path} against Draft 2020-12 schema...")
-    
-    with open(annotations_path, "r", encoding="utf-8") as f:
-        for idx, line in enumerate(f):
-            if not line.strip():
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from jsonschema import Draft202012Validator, FormatChecker
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_SCHEMA = ROOT / "schema" / "annotation_schema.json"
+DEFAULT_ANNOTATIONS = ROOT / "data" / "gold_standard" / "annotations.jsonl"
+
+
+def iter_jsonl(path: Path):
+    with path.open("r", encoding="utf-8") as fh:
+        for line_number, line in enumerate(fh, 1):
+            stripped = line.strip()
+            if not stripped:
                 continue
-            doc = json.loads(line)
             try:
-                jsonschema.validate(instance=doc, schema=schema)
-                print(f"Document {idx+1} ({doc['document_metadata']['document_id']}): Valid")
-            except jsonschema.exceptions.ValidationError as e:
-                print(f"Document {idx+1} ({doc['document_metadata']['document_id']}): Invalid -> {e.message}")
-                
+                yield line_number, json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                yield line_number, exc
+
+
+def validate(schema_path: Path, annotations_path: Path) -> int:
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    checked = 0
+    failures = 0
+
+    for line_number, payload in iter_jsonl(annotations_path):
+        checked += 1
+        if isinstance(payload, json.JSONDecodeError):
+            failures += 1
+            print(f"[FAIL] line {line_number}: invalid JSON: {payload}", file=sys.stderr)
+            continue
+
+        errors = sorted(validator.iter_errors(payload), key=lambda err: list(err.path))
+        if errors:
+            failures += 1
+            doc_id = payload.get("document_metadata", {}).get("document_id", f"line {line_number}")
+            print(f"[FAIL] {doc_id}: {len(errors)} schema error(s)", file=sys.stderr)
+            for error in errors[:10]:
+                location = "/".join(str(part) for part in error.path) or "<root>"
+                print(f"  - {location}: {error.message}", file=sys.stderr)
+            if len(errors) > 10:
+                print(f"  - ... {len(errors) - 10} more", file=sys.stderr)
+
+    if checked == 0:
+        print(f"[FAIL] no annotation records found in {annotations_path}", file=sys.stderr)
+        return 1
+    if failures:
+        print(f"Validation failed: {failures}/{checked} records invalid.", file=sys.stderr)
+        return 1
+
+    print(f"Validation passed: {checked} records conform to {schema_path}.")
+    return 0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Validate annotation JSONL against the FinSight schema.")
+    parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA, help="Path to annotation_schema.json.")
+    parser.add_argument("--annotations", type=Path, default=DEFAULT_ANNOTATIONS, help="Path to JSONL annotations.")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    validate_annotations()
+    args = parse_args()
+    raise SystemExit(validate(args.schema, args.annotations))

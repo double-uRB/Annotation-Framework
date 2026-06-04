@@ -1,0 +1,53 @@
+{
+  "document_count": 200,
+  "category_distribution": {
+    "Bank Statement": 30,
+    "Commercial Invoice": 30,
+    "Financial Statement": 25,
+    "Income Tax Return": 25,
+    "Insurance Policy": 20,
+    "Loan Agreement": 25,
+    "Payment Receipt": 25,
+    "Regulatory Filing": 20
+  },
+  "quality_tag_distribution": {
+    "CLEAN_DIGITAL": 25,
+    "HANDWRITTEN_ELEMENTS": 25,
+    "INCOMPLETE": 25,
+    "MULTI_CURRENCY": 15,
+    "MULTI_LANGUAGE": 10,
+    "OCR_DEGRADED": 13,
+    "OCR_HIGH_QUALITY": 25,
+    "OCR_NOISY": 12,
+    "REDACTED": 25,
+    "TEMPLATE_MISMATCH": 25
+  },
+  "multi_language_documents": 10,
+  "multi_currency_documents": 15,
+  "ocr_artifact_documents": 25,
+  "difficulty_4_or_5_documents": 91,
+  "entity_type_distribution": {
+    "ACCOUNT_NUMBER": 200,
+    "ADDRESS": 200,
+    "CLAUSE_REFERENCE": 90,
+    "COMPUTATION": 147,
+    "CONTACT_INFO": 200,
+    "CURRENCY_CODE": 224,
+    "DATE": 530,
+    "DOCUMENT_ID": 200,
+    "DURATION": 45,
+    "FISCAL_PERIOD": 200,
+    "FOOTNOTE_REF": 70,
+    "INSTITUTION_NAME": 200,
+    "INTEREST_RATE": 25,
+    "MONETARY_AMOUNT": 1009,
+    "PARTY_NAME": 200,
+    "PERCENTAGE": 75,
+    "PRODUCT_NAME": 225,
+    "REGULATORY_ID": 220,
+    "SIGNATURE_BLOCK": 47,
+    "STATUS": 225,
+    "TABLE_DATA": 162,
+    "TRANSACTION_TYPE": 355
+  }
+}
