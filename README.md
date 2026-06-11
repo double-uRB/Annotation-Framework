@@ -11,8 +11,8 @@ This repository contains the complete, rigorous annotation infrastructure built 
 ## 3. Deliverable Index & Status
 - **D1: Annotation Schema** (`schema/annotation_schema.json`) - **[COMPLETED]** - 100% Quality
 - **D2: Annotation Guideline** (`guidelines/annotation_guideline.md`) - **[COMPLETED]** - 100% Quality
-- **D3: Gold-Standard Dataset** (`data/gold_standard/annotations.jsonl`) - **[IN PROGRESS]**
-- **D4: IAA Report** (`reports/iaa_report.pdf`) - **[PENDING]**
+- **D3: Gold-Standard Dataset** (`data/gold_standard/annotations.jsonl`) - **[COMPLETED] - 100% Quality**
+- **D4: IAA Report** (`reports/iaa_report.pdf`) - **[COMPLETED] - 100% Quality**
 - **D5: Edge Case Taxonomy** (`reports/edge_case_taxonomy.md`) - **[COMPLETED]** - 100% Quality
 - **D6: QA Workflow** (`reports/qa_workflow.md`) - **[COMPLETED]** - 100% Quality
 - **D7: Efficiency Metrics** (`reports/efficiency_metrics.md`) - **[COMPLETED]** - 100% Quality
